@@ -93,5 +93,52 @@ Example output:
 docker build --target test .
 ```
 
-Uploading the generated file to Neocities is intentionally not part of this
-initial scaffold.
+## Publish to Neocities
+
+The Neocities publisher is a separate worker in the same image. It reads
+`solar.json` from the shared output directory but receives no GX credential.
+The MQTT collector receives no Neocities key.
+
+Generate an API key using the
+[official Neocities API](https://neocities.org/api), then store it outside the
+repository:
+
+```sh
+mkdir -p ~/.config/victron-gx-publisher
+chmod 700 ~/.config/victron-gx-publisher
+read -rsp "Neocities API key: " NEOCITIES_KEY
+printf '%s' "$NEOCITIES_KEY" \
+  > ~/.config/victron-gx-publisher/neocities_api_key
+unset NEOCITIES_KEY
+chmod 600 ~/.config/victron-gx-publisher/neocities_api_key
+```
+
+Run the publisher alongside the MQTT collector:
+
+```sh
+docker run --rm \
+  --name victron-neocities-publisher \
+  --user "$(id -u):$(id -g)" \
+  --env-file .env \
+  -v "$HOME/.config/victron-gx-publisher/neocities_api_key:/run/secrets/neocities_api_key:ro" \
+  -v "$(pwd)/output:/app/output:ro" \
+  victron-gx-publisher \
+  victron-gx-publish-neocities
+```
+
+The worker validates the JSON, waits for writes to settle, skips unchanged
+content, and uploads it with Bearer authentication as multipart form data. It
+never calls the Neocities delete API. Upload failures are retried with capped
+exponential backoff and do not interrupt MQTT collection.
+
+Neocities asks recurring API clients to limit updates to one per minute. The
+default interval here is five minutes.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NEOCITIES_API_KEY_FILE` | `/run/secrets/neocities_api_key` | Mounted API-key file |
+| `NEOCITIES_REMOTE_PATH` | `solar.json` | Destination filename |
+| `NEOCITIES_MIN_UPLOAD_INTERVAL` | `300` | Minimum seconds between uploads |
+| `NEOCITIES_SETTLE_SECONDS` | `10` | Quiet period before upload |
+| `NEOCITIES_POLL_SECONDS` | `2` | Local file polling interval |
+| `NEOCITIES_REQUEST_TIMEOUT` | `15` | HTTP request timeout |
