@@ -1,6 +1,10 @@
 .env
+.env.*
+!.env.example
 config.toml
 output/
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
+*.egg-info/
