@@ -33,7 +33,7 @@ class PublisherSettings:
     remote_path: str = "solar.json"
     api_url: str = DEFAULT_API_URL
     settle_seconds: float = 10.0
-    min_upload_interval: float = 300.0
+    min_upload_interval: float = 60.0
     poll_seconds: float = 2.0
     request_timeout: float = 15.0
 
