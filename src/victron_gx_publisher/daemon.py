@@ -168,7 +168,13 @@ class SolarYieldDaemon:
                 if self.settings.vrm_portal_id:
                     client.publish("R/%s/keepalive" % self.settings.vrm_portal_id)
                     LOGGER.info("requested a full GX value refresh")
-                client.loop_forever()
+                client.loop_forever(
+                    refresh_topic=(
+                        "R/%s/keepalive" % self.settings.vrm_portal_id
+                        if self.settings.vrm_portal_id
+                        else None
+                    )
+                )
             except (ConnectionError, OSError, ValueError) as error:
                 LOGGER.error(
                     "MQTT connection lost: %s; retrying in %.1f seconds",
