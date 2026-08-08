@@ -12,14 +12,14 @@ import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Callable
+from typing import Callable, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_API_URL = "https://neocities.org/api/upload"
 REMOTE_PATH_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*[.]json$")
-Transport = Callable[[Request, float], tuple[int, bytes]]
+Transport = Callable[[Request, float], Tuple[int, bytes]]
 
 
 class PublishError(RuntimeError):
