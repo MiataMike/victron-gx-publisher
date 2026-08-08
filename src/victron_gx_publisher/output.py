@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -18,7 +18,7 @@ def write_solar_json(
     now: datetime | None = None,
 ) -> None:
     """Atomically replace the solar JSON file with the current aggregate."""
-    timestamp = (now or datetime.now(UTC)).astimezone(UTC)
+    timestamp = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     document = {
         "lifetime_yield_kwh": float(lifetime_yield_kwh),
         "charger_count": charger_count,

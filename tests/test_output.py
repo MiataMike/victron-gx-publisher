@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from victron_gx_publisher.output import write_solar_json
@@ -12,7 +12,7 @@ def test_writes_solar_json(tmp_path) -> None:
         output_path,
         lifetime_yield_kwh=Decimal("19.75"),
         charger_count=2,
-        now=datetime(2026, 7, 13, 12, 30, tzinfo=UTC),
+        now=datetime(2026, 7, 13, 12, 30, tzinfo=timezone.utc),
     )
 
     assert json.loads(output_path.read_text()) == {
