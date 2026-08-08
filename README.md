@@ -26,7 +26,7 @@ computer. The native version instead:
 - replaces `paho-mqtt` with a small MQTT 3.1.1 client
 - stores the application and output under the update-persistent `/data` partition
 - starts through `/data/rc.local` and restarts workers after failures
-- sends logs to the Venus OS system log instead of growing log files on flash
+- writes bounded collector and publisher logs under `/data/victron-gx-publisher/logs`
 
 ## Install on Venus OS
 
