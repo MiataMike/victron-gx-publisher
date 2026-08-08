@@ -151,17 +151,31 @@ class MqttClient:
             raise ConnectionError("MQTT client is not connected")
         self._socket.sendall(_packet(3, 0, _encode_string(topic) + payload))
 
-    def loop_forever(self) -> None:
+    def loop_forever(
+        self,
+        *,
+        refresh_topic: Optional[str] = None,
+        refresh_interval: float = 30.0,
+    ) -> None:
         if self._socket is None:
             raise ConnectionError("MQTT client is not connected")
         last_traffic = time.monotonic()
+        last_refresh = last_traffic
         while True:
             try:
                 packet_type, flags, payload = self._recv_packet()
             except socket.timeout:
-                if time.monotonic() - last_traffic >= self.keepalive / 2:
+                now = time.monotonic()
+                if refresh_topic and now - last_refresh >= refresh_interval:
+                    self.publish(
+                        refresh_topic,
+                        b'{"keepalive-options":["suppress-republish"]}',
+                    )
+                    last_refresh = now
+                    last_traffic = now
+                elif now - last_traffic >= self.keepalive / 2:
                     self._socket.sendall(_packet(12, 0, b""))
-                    last_traffic = time.monotonic()
+                    last_traffic = now
                 continue
 
             last_traffic = time.monotonic()
