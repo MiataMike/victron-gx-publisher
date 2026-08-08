@@ -1,9 +1,11 @@
 #!/bin/sh
 APP_DIR=/data/victron-gx-publisher
 RUN_DIR="$APP_DIR/run"
+LOG_DIR="$APP_DIR/logs"
 KEY_FILE="$APP_DIR/secrets/neocities_api_key"
+SUPERVISOR_LOG="$LOG_DIR/supervisor.log"
 
-mkdir -p "$RUN_DIR" "$APP_DIR/output" "$APP_DIR/secrets"
+mkdir -p "$RUN_DIR" "$LOG_DIR" "$APP_DIR/output" "$APP_DIR/secrets"
 
 start_worker() {
     name="$1"
@@ -17,7 +19,7 @@ start_worker() {
 
     nohup "$script" >/dev/null 2>&1 &
     echo "$!" > "$pid_file"
-    logger -t victron-gx-publisher "started $name (pid $!)"
+    printf '%s started %s (pid %s)\n' "$(date -Iseconds 2>/dev/null || date)" "$name" "$!" >>"$SUPERVISOR_LOG"
 }
 
 start_worker collector "$APP_DIR/venus/run-collector.sh"
@@ -26,5 +28,5 @@ if [ -s "$KEY_FILE" ]
 then
     start_worker publisher "$APP_DIR/venus/run-publisher.sh"
 else
-    logger -t victron-gx-publisher "Neocities publisher disabled: no key at $KEY_FILE"
+    printf '%s Neocities publisher disabled: no key at %s\n' "$(date -Iseconds 2>/dev/null || date)" "$KEY_FILE" >>"$SUPERVISOR_LOG"
 fi
