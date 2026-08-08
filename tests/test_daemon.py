@@ -1,53 +1,54 @@
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
-from victron_gx_publisher.daemon import Settings, parse_yield_message
+from victron_gx_publisher.daemon import Settings, SolarYieldDaemon
 
 
-TOPIC = "N/portal-id/solarcharger/288/Yield/System"
-
-
-def test_parses_victron_yield_payload() -> None:
-    assert parse_yield_message(TOPIC, b'{"value": 1234.56}') == Decimal("1234.56")
-
-
-def test_accepts_null_as_an_unavailable_value() -> None:
-    assert parse_yield_message(TOPIC, b'{"value": null}') is None
-
-
-@pytest.mark.parametrize(
-    ("topic", "payload"),
-    [
-        ("N/portal-id/system/0/Yield/System", b'{"value": 1}'),
-        (TOPIC, b"not-json"),
-        (TOPIC, b'{"other": 1}'),
-        (TOPIC, b'{"value": true}'),
-        (TOPIC, b'{"value": "NaN"}'),
-    ],
-)
-def test_rejects_unexpected_messages(topic: str, payload: bytes) -> None:
-    with pytest.raises(ValueError):
-        parse_yield_message(topic, payload)
-
-
-def test_reads_password_from_secret_file(tmp_path, monkeypatch) -> None:
-    secret_file = tmp_path / "mqtt_password"
-    secret_file.write_text("device-secret\n")
-    monkeypatch.setenv("MQTT_PASSWORD_FILE", str(secret_file))
-    monkeypatch.delenv("MQTT_PASSWORD", raising=False)
-
+def test_settings_use_native_venus_defaults(monkeypatch) -> None:
+    monkeypatch.delenv("OUTPUT_PATH", raising=False)
+    monkeypatch.delenv("POLL_SECONDS", raising=False)
     settings = Settings.from_environment()
+    assert settings.dbus_command == "/usr/bin/dbus"
+    assert settings.poll_seconds == 30
+    assert settings.output_path == Path(
+        "/data/victron-gx-publisher/output/solar.json"
+    )
 
-    assert settings.mqtt_password == "device-secret"
-    assert "device-secret" not in repr(settings)
 
-
-def test_rejects_two_password_sources(monkeypatch, tmp_path) -> None:
-    secret_file = tmp_path / "mqtt_password"
-    secret_file.write_text("file-secret")
-    monkeypatch.setenv("MQTT_PASSWORD_FILE", str(secret_file))
-    monkeypatch.setenv("MQTT_PASSWORD", "environment-secret")
-
-    with pytest.raises(ValueError, match="only one"):
+def test_rejects_invalid_poll_interval(monkeypatch) -> None:
+    monkeypatch.setenv("POLL_SECONDS", "0")
+    with pytest.raises(ValueError, match="positive"):
         Settings.from_environment()
+
+
+def test_collects_and_sums_all_chargers(tmp_path, monkeypatch) -> None:
+    output = tmp_path / "solar.json"
+    yields = {
+        "com.victronenergy.solarcharger.ttyUSB0": Decimal("115.53"),
+        "com.victronenergy.solarcharger.ttyUSB1": Decimal("42.25"),
+    }
+    monkeypatch.setattr(
+        "victron_gx_publisher.daemon.read_solar_yields",
+        lambda command: yields,
+    )
+    daemon = SolarYieldDaemon(Settings(output_path=output))
+
+    assert daemon.collect_once()
+    document = output.read_text()
+    assert '"lifetime_yield_kwh": 157.78' in document
+    assert '"charger_count": 2' in document
+    assert not daemon.collect_once()
+
+
+def test_does_not_replace_output_when_no_chargers_exist(tmp_path, monkeypatch) -> None:
+    output = tmp_path / "solar.json"
+    monkeypatch.setattr(
+        "victron_gx_publisher.daemon.read_solar_yields",
+        lambda command: {},
+    )
+    daemon = SolarYieldDaemon(Settings(output_path=output))
+
+    assert not daemon.collect_once()
+    assert not output.exists()
