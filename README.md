@@ -30,15 +30,19 @@ computer. The native version instead:
 
 ## Install on Venus OS
 
-Enable SSH on LAN and log into the GX device as root. Then:
+Enable SSH on LAN. Clone the branch on your normal computer and copy it to the
+GX device; this does not assume that the stripped-down Venus OS image includes
+Git:
 
 ```sh
-cd /data
-git clone https://github.com/MiataMike/victron-gx-publisher.git
-cd victron-gx-publisher
-git checkout venus-os-native
-./venus/install.sh
+git clone --branch venus-os-native --single-branch \
+  https://github.com/MiataMike/victron-gx-publisher.git
+scp -r victron-gx-publisher root@venus.local:/data/victron-gx-publisher
+ssh root@venus.local /data/victron-gx-publisher/venus/install.sh
 ```
+
+If the repository is already at `/data/victron-gx-publisher`, simply update its
+files and rerun `venus/install.sh`; the installation is idempotent.
 
 The installer is intentionally conservative: it must run from
 `/data/victron-gx-publisher`, preserves an existing `/data/rc.local`, and only
