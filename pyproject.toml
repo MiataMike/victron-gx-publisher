@@ -4,13 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "victron-gx-publisher"
-version = "0.1.0"
-description = "Aggregate solar charger lifetime yield from a Victron GX MQTT broker."
+version = "0.2.0"
+description = "Native Venus OS solar-yield collector and Neocities publisher."
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = [
-    "paho-mqtt>=2.1,<3",
-]
+requires-python = ">=3.8"
+dependencies = []
 
 [project.scripts]
 victron-gx-publisher = "victron_gx_publisher.daemon:main"
@@ -29,4 +27,4 @@ addopts = "-q"
 testpaths = ["tests"]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py38"
