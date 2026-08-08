@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "victron-gx-publisher"
 version = "0.2.0"
-description = "Native Venus OS solar-yield collector and Neocities publisher."
+description = "Native Venus OS D-Bus solar-yield collector and Neocities publisher."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = []
