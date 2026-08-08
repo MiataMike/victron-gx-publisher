@@ -1,0 +1,3 @@
+# Venus OS shell and configuration files must retain Unix LF endings.
+*.sh text eol=lf
+*.env text eol=lf
