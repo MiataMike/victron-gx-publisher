@@ -32,9 +32,9 @@ def fake_runner(command, **kwargs):
             "com.victronenergy.solarcharger.ttyUSB1\n"
             "com.victronenergy.solarcharger.ttyUSB0\n"
         )
-    elif "ttyUSB0" in command:
+    elif any("ttyUSB0" in part for part in command):
         stdout = "value = 115.52999877929688\n"
-    elif "ttyUSB1" in command:
+    elif any("ttyUSB1" in part for part in command):
         stdout = "value = 42.25\n"
     else:
         raise AssertionError(command)
